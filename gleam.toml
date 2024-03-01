@@ -1,0 +1,12 @@
+name = "graph"
+version = "0.1.0"
+
+description = "Directed and undirected graphs"
+licences = ["Apache-2.0"]
+repository = { type = "github", user = "giacomocavalieri", repo = "graph" }
+
+[dependencies]
+gleam_stdlib = "~> 0.34 or ~> 1.0"
+
+[dev-dependencies]
+gleeunit = "~> 1.0"
