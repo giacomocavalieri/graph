@@ -6,7 +6,7 @@
 //// |---|---|
 //// | creating graphs | [`new`](#new) |
 //// | turning graphs into lists | [`nodes`](#nodes) |
-//// | querying a graph | [`size`](#size), [`has_node`](#has_node), [`has_edge`](#has_edge), [`get_context`](#get_context), [`match`](#match) |
+//// | querying a graph | [`size`](#size), [`has_node`](#has_node), [`has_edge`](#has_edge), [`get_context`](#get_context), [`match`](#match), [`match_any`](#match_any) |
 //// | adding/removing elements from a graph | [`insert_node`](#insert_node), [`insert_directed_edge`](#insert_directed_edge), [`insert_undirected_edge`](#insert_undirected_edge), [`remove_node`](#remove_node), [`remove_directed_edge`](#remove_directed_edge), [`remove_undirected_edge`](#remove_undirected_edge) |
 //// | transforming graphs | [`fold`](#fold), [`reverse`](#reverse), [`map_contexts`](#map_contexts), [`map_values`](#map_values), [`map_labels`](#map_labels), [`reverse_edges`](#reverse_edges), [`to_directed`](#to_directed) |
 ////
@@ -201,6 +201,20 @@ pub fn match(
   let new_incoming = dict.delete(incoming, node_id)
   let new_outgoing = dict.delete(outgoing, node_id)
   Ok(#(Context(new_incoming, node, new_outgoing), rest))
+}
+
+/// If the graph contains any node, returns a tuple containing a node of the
+/// graph (with all edges looping back to itself removed) and the "remaining"
+/// graph: that is, the original graph where that node has been removed.
+///
+pub fn match_any(
+  graph: Graph(direction, value, label),
+) -> Result(#(Context(value, label), Graph(direction, value, label)), Nil) {
+  let Graph(dict) = graph
+  case dict.keys(dict) {
+    [] -> Error(Nil)
+    [first, ..] -> match(graph, first)
+  }
 }
 
 // --- ADDING/REMOVING ELEMENTS FROM A GRAPH -----------------------------------
