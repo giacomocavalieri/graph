@@ -8,7 +8,7 @@
 //// | turning graphs into lists | [`nodes`](#nodes) |
 //// | querying a graph | [`size`](#size), [`has_node`](#has_node), [`has_edge`](#has_edge), [`get_context`](#get_context), [`match`](#match), [`match_any`](#match_any) |
 //// | adding/removing elements from a graph | [`insert_node`](#insert_node), [`insert_directed_edge`](#insert_directed_edge), [`insert_undirected_edge`](#insert_undirected_edge), [`remove_node`](#remove_node), [`remove_directed_edge`](#remove_directed_edge), [`remove_undirected_edge`](#remove_undirected_edge) |
-//// | transforming graphs | [`fold`](#fold), [`reverse`](#reverse), [`map_contexts`](#map_contexts), [`map_values`](#map_values), [`map_labels`](#map_labels), [`reverse_edges`](#reverse_edges), [`to_directed`](#to_directed) |
+//// | transforming graphs | [`reverse_edges`](#reverse_edges), [`to_directed`](#to_directed) |
 ////
 
 import gleam/dict.{type Dict}
@@ -58,13 +58,6 @@ pub type Context(value, label) {
 
 /// Creates a new empty graph.
 ///
-/// ## Examples
-///
-/// ```gleam
-/// nodes(new())
-/// // -> []
-/// ```
-///
 pub fn new() -> Graph(direction, value, label) {
   Graph(dict.new())
 }
@@ -76,13 +69,11 @@ pub fn new() -> Graph(direction, value, label) {
 /// ## Examples
 ///
 /// ```gleam
-/// new() |> nodes
-/// // -> []
-/// ```
-///
-/// ```gleam
-/// new() |> insert_node(Node(1, "a node")) |> nodes
-/// // -> [Node(1, "a node")]
+/// assert [] == graph.new() |> graph.nodes
+/// assert [graph.Node(1, "")]
+///   == graph.new()
+///   |> graph.insert_node(graph.Node(1, "a node"))
+///   |> graph.nodes
 /// ```
 ///
 pub fn nodes(graph: Graph(direction, value, label)) -> List(Node(value)) {
@@ -98,13 +89,11 @@ pub fn nodes(graph: Graph(direction, value, label)) -> List(Node(value)) {
 /// ## Examples
 ///
 /// ```gleam
-/// new() |> size
-/// // -> 0
-/// ```
-///
-/// ```gleam
-/// new() |> insert_node(Node(1, "a node")) |> size
-/// // -> 1
+/// assert 0 == graph.new() |> graph.size
+/// assert 1
+///   == graph.new()
+///   |> graph.insert_node(graph.Node(1, "a node"))
+///   |> graph.size
 /// ```
 ///
 pub fn size(graph: Graph(direction, value, label)) -> Int {
@@ -117,13 +106,12 @@ pub fn size(graph: Graph(direction, value, label)) -> Int {
 /// ## Examples
 ///
 /// ```gleam
-/// let my_graph = new() |> insert_node(Node(1, "a node"))
+/// let graph =
+///   graph.new()
+///   |> graph.insert_node(graph.Node(1, "a node"))
 ///
-/// my_graph |> has_node(1)
-/// // -> True
-///
-/// my_graph |> has_node(2)
-/// // -> False
+/// assert graph.has_node(graph, 1)
+/// assert !graph.has_node(graph, 2)
 /// ```
 ///
 pub fn has_node(graph: Graph(direction, value, label), node_id: Int) -> Bool {
@@ -137,17 +125,14 @@ pub fn has_node(graph: Graph(direction, value, label), node_id: Int) -> Bool {
 /// ## Examples
 ///
 /// ```gleam
-/// let my_graph =
-///   new()
-///   |> insert_node(Node(1, "a node"))
-///   |> insert_node(Node(2, "other node"))
-///   |> insert_directed_edge("edge label", from: 1, to: 2)
+/// let graph =
+///   graph.new()
+///   |> graph.insert_node(graph.Node(1, "a node"))
+///   |> graph.insert_node(graph.Node(2, "another node"))
+///   |> graph.insert_directed_edge("label", from: 1, to: 2)
 ///
-/// my_graph |> has_edge(from: 1, to: 2)
-/// // -> True
-///
-/// my_graph |> has_edge(from: 2, to: 1)
-/// // -> False
+/// assert graph.has_edge(graph, from: 1, to: 2)
+/// assert !graph.has_edge(graph, from: 2, to: 1)
 /// ```
 ///
 pub fn has_edge(
@@ -167,13 +152,11 @@ pub fn has_edge(
 /// ## Examples
 ///
 /// ```gleam
-/// new() |> get(1)
-/// // -> Error(Nil)
-/// ```
-///
-/// ```gleam
-/// new() |> insert_node(Node(1, "a node")) |> get_context(of: 1)
-/// // -> Ok(Context(node: Node(1, "a node"), ..))
+/// assert Error(Nil) == graph.new() |> graph.get_context(of: 1)
+/// let assert Ok(graph.Context(node: Node(1, "a node"), ..)) =
+///   graph.new()
+///   |> graph.insert_node(graph.Node(1, "a node"))
+///   |> graph.get_context(of: 1)
 /// ```
 ///
 pub fn get_context(
@@ -224,13 +207,6 @@ pub fn match_any(
 /// by the new one.
 /// The newly added node won't be connected to any existing node.
 ///
-/// ## Examples
-///
-/// ```gleam
-/// new() |> insert_node(Node(1, "a node")) |> nodes
-/// // -> [Node(1, "a node")]
-/// ```
-///
 pub fn insert_node(
   graph: Graph(direction, value, label),
   node: Node(value),
@@ -242,20 +218,6 @@ pub fn insert_node(
 }
 
 /// Adds an edge connecting two nodes in a directed graph.
-///
-/// ```gleam
-/// let my_graph =
-///   new()
-///   |> insert_node(Node(1, "a node"))
-///   |> insert_node(Node(2, "other node"))
-///   |> insert_directed_edge("edge label", from: 1, to: 2)
-///
-/// my_graph |> has_edge(from: 1, to: 2)
-/// // -> True
-///
-/// my_graph |> has_edge(from: 2, to: 1)
-/// // -> False
-/// ```
 ///
 pub fn insert_directed_edge(
   graph: Graph(Directed, value, label),
@@ -270,21 +232,6 @@ pub fn insert_directed_edge(
 
 /// Adds an edge connecting two nodes in an undirected graph.
 ///
-/// ## Examples
-///
-/// ```gleam
-/// let my_graph =
-///   new()
-///   |> insert_node(Node(1, "a node"))
-///   |> insert_node(Node(2, "other node"))
-///   |> insert_undirected_edge("edge label", between: 1, and: 2)
-///
-/// my_graph |> has_edge(from: 1, to: 2)
-/// // -> True
-///
-/// my_graph |> has_edge(from: 2, to: 1)
-/// // -> True
-/// ```
 pub fn insert_undirected_edge(
   graph: Graph(Undirected, value, label),
   labelled label: label,
@@ -417,134 +364,134 @@ pub fn remove_undirected_edge(
 
 // --- TRANSFORMING GRAPHS -----------------------------------------------------
 
-/// Reduces the given graph into a single value by applying function to all its
-/// contexts, one after the other.
-///
-/// > 🚨 Graph's contexts are not sorted in any way so your folding function
-/// > should never rely on any accidental order the contexts might have.
-///
-/// ## Examples
-///
-/// ```gleam
-/// // The size function could be implemented using a fold.
-/// // The real implementation is more efficient because it doesn't have to
-/// // traverse all contexts!
-/// pub fn size(graph) {
-///   fold(
-///     over: graph,
-///     from: 0,
-///     with: fn(size, _context) { size + 1 },
-///   )
-/// }
-/// ```
-///
-pub fn fold(
-  over graph: Graph(direction, value, label),
-  from initial: b,
-  with fun: fn(b, Context(value, label)) -> b,
-) -> b {
-  let Graph(graph) = graph
-  use acc, _node_id, context <- dict.fold(over: graph, from: initial)
-  fun(acc, context)
-}
+// /// Reduces the given graph into a single value by applying function to all its
+// /// contexts, one after the other.
+// ///
+// /// > 🚨 Graph's contexts are not sorted in any way so your folding function
+// /// > should never rely on any accidental order the contexts might have.
+// ///
+// /// ## Examples
+// ///
+// /// ```gleam
+// /// // The size function could be implemented using a fold.
+// /// // The real implementation is more efficient because it doesn't have to
+// /// // traverse all contexts!
+// /// pub fn size(graph) {
+// ///   fold(
+// ///     over: graph,
+// ///     from: 0,
+// ///     with: fn(size, _context) { size + 1 },
+// ///   )
+// /// }
+// /// ```
+// ///
+// pub fn fold(
+//   over graph: Graph(direction, value, label),
+//   from initial: b,
+//   with fun: fn(b, Context(value, label)) -> b,
+// ) -> b {
+//   let Graph(graph) = graph
+//   use acc, _node_id, context <- dict.fold(over: graph, from: initial)
+//   fun(acc, context)
+// }
 
-/// Transform the contexts associated with each node.
-///
-/// > This function can add and remove arbitrary edges from the graph by
-/// > updating the `incoming` and `outgoing` edges of a context.
-/// > So we can't assume the final graph will still be `Undirected`, that's why
-/// > it is always treated as a `Directed` one.
-///
-/// ## Examples
-///
-/// ```gleam
-/// // The reverse function can be implemented with `map_contexts`
-/// pub fn reverse(graph) {
-///   map_contexts(in: graph, with: fn(context) {
-///     Context(
-///       ..context,
-///       incoming: context.outgoing,
-///       outgoing: context.incoming,
-///     )
-///   })
-/// }
-/// ```
-///
-pub fn map_contexts(
-  in graph: Graph(direction, value, label),
-  with fun: fn(Context(value, label)) -> Context(value, label),
-) -> Graph(Directed, value, label) {
-  use acc, context <- fold(over: graph, from: new())
-  insert_context(acc, fun(context))
-}
+// /// Transform the contexts associated with each node.
+// ///
+// /// > This function can add and remove arbitrary edges from the graph by
+// /// > updating the `incoming` and `outgoing` edges of a context.
+// /// > So we can't assume the final graph will still be `Undirected`, that's why
+// /// > it is always treated as a `Directed` one.
+// ///
+// /// ## Examples
+// ///
+// /// ```gleam
+// /// // The reverse function can be implemented with `map_contexts`
+// /// pub fn reverse(graph) {
+// ///   map_contexts(in: graph, with: fn(context) {
+// ///     Context(
+// ///       ..context,
+// ///       incoming: context.outgoing,
+// ///       outgoing: context.incoming,
+// ///     )
+// ///   })
+// /// }
+// /// ```
+// ///
+// pub fn map_contexts(
+//   in graph: Graph(direction, value, label),
+//   with fun: fn(Context(value, label)) -> Context(value, label),
+// ) -> Graph(Directed, value, label) {
+//   use acc, context <- fold(over: graph, from: new())
+//   insert_context(acc, fun(context))
+// }
 
-fn insert_context(
-  graph: Graph(direction, value, label),
-  context: Context(value, label),
-) -> Graph(Directed, value, label) {
-  let Graph(graph) = graph
-  let new_graph = dict.insert(graph, context.node.id, context)
-  Graph(new_graph)
-}
+// fn insert_context(
+//   graph: Graph(direction, value, label),
+//   context: Context(value, label),
+// ) -> Graph(Directed, value, label) {
+//   let Graph(graph) = graph
+//   let new_graph = dict.insert(graph, context.node.id, context)
+//   Graph(new_graph)
+// }
 
-/// Transforms the values of all the graph's nodes using the given function.
-///
-/// ## Examples
-///
-/// ```gleam
-/// new()
-/// |> insert_node(Node(1, "a node"))
-/// |> map_nodes(fn(value) { value <> "!" })
-/// |> nodes
-/// // -> [Node(1, "my node!")]
-/// ```
-///
-pub fn map_values(
-  in graph: Graph(direction, value, label),
-  with fun: fn(value) -> new_value,
-) -> Graph(direction, new_value, label) {
-  let Graph(graph) = graph
-  // Since this function doesn't change the graph's topology I'm not
-  // implementing it with a `graph.fold` or a `graph.map_contexts`, it would
-  // increase code reuse but would rebuild a new graph each time by adding
-  // each context one by one.
-  Graph({
-    use _node_id, context <- dict.map_values(graph)
-    let Context(incoming, Node(id, value), outgoing) = context
-    Context(incoming, Node(id, fun(value)), outgoing)
-  })
-}
+// /// Transforms the values of all the graph's nodes using the given function.
+// ///
+// /// ## Examples
+// ///
+// /// ```gleam
+// /// new()
+// /// |> insert_node(Node(1, "a node"))
+// /// |> map_nodes(fn(value) { value <> "!" })
+// /// |> nodes
+// /// // -> [Node(1, "my node!")]
+// /// ```
+// ///
+// pub fn map_values(
+//   in graph: Graph(direction, value, label),
+//   with fun: fn(value) -> new_value,
+// ) -> Graph(direction, new_value, label) {
+//   let Graph(graph) = graph
+//   // Since this function doesn't change the graph's topology I'm not
+//   // implementing it with a `graph.fold` or a `graph.map_contexts`, it would
+//   // increase code reuse but would rebuild a new graph each time by adding
+//   // each context one by one.
+//   Graph({
+//     use _node_id, context <- dict.map_values(graph)
+//     let Context(incoming, Node(id, value), outgoing) = context
+//     Context(incoming, Node(id, fun(value)), outgoing)
+//   })
+// }
 
-/// Transforms the labels of all the graph's edges using the given function.
-///
-/// ## Examples
-///
-/// ```
-/// new()
-/// |> insert_node(Node(1, "a node"))
-/// |> insert_undirected_edge(UndirectedEdge(1, 1, "label"))
-/// |> map_labels(fn(label) { label <> "!" })
-/// |> labels
-/// // -> ["label!"]
-/// ```
-///
-pub fn map_labels(
-  in graph: Graph(direction, value, label),
-  with fun: fn(label) -> new_label,
-) -> Graph(direction, value, new_label) {
-  // Since this function doesn't change the graph's topology I'm not
-  // implementing it with a `graph.fold` or a `graph.map_contexts`, it would
-  // increase code reuse but would rebuild a new graph each time by adding
-  // each context one by one.
-  let Graph(graph) = graph
-  Graph({
-    use _node_id, context <- dict.map_values(graph)
-    let Context(incoming, node, outgoing) = context
-    let new_incoming = dict.map_values(incoming, fn(_id, label) { fun(label) })
-    let new_outgoing = dict.map_values(outgoing, fn(_id, label) { fun(label) })
-    Context(new_incoming, node, new_outgoing)
-  })
-}
+// /// Transforms the labels of all the graph's edges using the given function.
+// ///
+// /// ## Examples
+// ///
+// /// ```
+// /// new()
+// /// |> insert_node(Node(1, "a node"))
+// /// |> insert_undirected_edge(UndirectedEdge(1, 1, "label"))
+// /// |> map_labels(fn(label) { label <> "!" })
+// /// |> labels
+// /// // -> ["label!"]
+// /// ```
+// ///
+// pub fn map_labels(
+//   in graph: Graph(direction, value, label),
+//   with fun: fn(label) -> new_label,
+// ) -> Graph(direction, value, new_label) {
+//   // Since this function doesn't change the graph's topology I'm not
+//   // implementing it with a `graph.fold` or a `graph.map_contexts`, it would
+//   // increase code reuse but would rebuild a new graph each time by adding
+//   // each context one by one.
+//   let Graph(graph) = graph
+//   Graph({
+//     use _node_id, context <- dict.map_values(graph)
+//     let Context(incoming, node, outgoing) = context
+//     let new_incoming = dict.map_values(incoming, fn(_id, label) { fun(label) })
+//     let new_outgoing = dict.map_values(outgoing, fn(_id, label) { fun(label) })
+//     Context(new_incoming, node, new_outgoing)
+//   })
+// }
 
 /// Flips the direction of every edge in the graph. All incoming edges will
 /// become outgoing and vice-versa.
